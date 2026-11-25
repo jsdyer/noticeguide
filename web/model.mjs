@@ -28,7 +28,8 @@ export function decodeNotice(input) {
  const timestamps=unique(text.match(/\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:\s?(?:Z|UTC|GMT|[+-]\d{2}:?\d{2}))?)?\b/g)||[]);
  const flags=[];
  for (const [i,line] of lines.entries()) {
-   const sentences=line.match(/[^.!?]+[.!?]?/g)||[line];
+   // Split only at sentence punctuation followed by whitespace: URL dots and decimal amounts stay intact.
+   const sentences=line.split(/(?<=[.!?])\s+/);
    for(const raw of sentences){const s=raw.trim();if(!s)continue;
     const negative=/\b(?:do not|don't|does not|must not|no (?:need|obligation|requirement) to|not required to|never)\b.{0,70}\b(?:pay|payment|settle|settlement|provide|disclose|personal)\b/i.test(s);
     const legalEducation=/\b(?:shall not contain|must not contain|not permitted|prohibited content|not comply|invalid under|does not comply)\b/i.test(s);
