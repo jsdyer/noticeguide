@@ -1,37 +1,5 @@
-import { cleanLines } from './model.mjs';
-const input = document.querySelector('#input');
-const output = document.querySelector('#output');
-const status = document.querySelector('#status');
-const copy = document.querySelector('#copy');
-function update() {
-  const result = cleanLines(input.value);
-  output.value = result.text;
-  status.textContent = `${result.count} unique ${result.count === 1 ? 'line' : 'lines'}; ${result.removed} ${result.removed === 1 ? 'duplicate' : 'duplicates'} removed.`;
-  copy.disabled = result.count === 0;
-}
-input.addEventListener('input', update);
-document.querySelector('#sample').addEventListener('click', () => {
-  input.value = '  Halifax\nLangley\nHalifax\n\nVancouver  ';
-  update();
-});
-document.querySelector('#clear').addEventListener('click', () => {
-  input.value = '';
-  update();
-  input.focus();
-});
-if (navigator.clipboard && window.isSecureContext) {
-  copy.hidden = false;
-  copy.disabled = true;
-  copy.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(output.value);
-      status.textContent = 'Result copied.';
-    } catch {
-      output.focus();
-      output.select();
-      status.textContent = 'Copy was unavailable. The result is selected so you can copy it manually.';
-    }
-  });
-}
-// Namespace future preference storage as coolcode:<tool-id>:<key>.
-// Do not persist pasted text or uploads by default.
+import {decodeNotice,reportText,EXAMPLE,REFERENCES,REVIEWED,MAX_INPUT} from './model.mjs';
+const $=id=>document.getElementById(id);let result=null;
+function el(tag,text,cls){const n=document.createElement(tag);n.textContent=text;if(cls)n.className=cls;return n;}
+function decode(){try{result=decodeNotice($('input').value);$('fields').replaceChildren();$('flags').replaceChildren();$('identifiers').replaceChildren();for(const f of result.fields){const card=el('article','','field');card.append(el('h3',f.label),el('p',f.values.join('\n')||'Not automatically found',f.values.length?'value':'muted'),el('p',f.meaning,'small'));$('fields').append(card);}if(!result.flags.length)$('flags').append(el('p','No matching demand language detected. This does not establish validity: wording, linked pages and context still need review.'));for(const f of result.flags){const n=el('article','','flag');n.append(el('h3',f.kind),el('blockquote',f.evidence),el('p','Review the original context; automated phrase matching can be wrong.','small'));$('flags').append(n);}for(const [title,values]of [['IP addresses',result.ipv4],['Date-like text',result.timestamps],['Links found (not opened)',result.urls]]){const d=el('div');d.append(el('h3',title),el('p',values.join('\n')||'None automatically found','value'));$('identifiers').append(d);}$('results').hidden=false;$('status').textContent=`Reviewed ${result.characters.toLocaleString()} characters locally. ${result.flags.length} possible issue${result.flags.length===1?'':'s'} to inspect.`;$('export').disabled=false;}catch(e){$('status').textContent=e.message;}}
+$('analyse').addEventListener('click',decode);$('sample').addEventListener('click',()=>{$('input').value=EXAMPLE;decode();});$('clear').addEventListener('click',()=>{$('input').value='';$('file').value='';result=null;$('fields').replaceChildren();$('flags').replaceChildren();$('identifiers').replaceChildren();$('results').hidden=true;$('export').disabled=true;$('status').textContent='Cleared this tab.';});$('file').addEventListener('change',async()=>{const file=$('file').files[0];if(!file)return;if(file.size>MAX_INPUT){$('status').textContent='Choose a plain-text file under 250 KB.';return;}const text=await file.text();if(text.includes('\0')){$('status').textContent='This looks like a binary file. Paste the readable notice text instead.';return;}$('input').value=text;decode();});$('export').addEventListener('click',()=>{if(!result)return;const url=URL.createObjectURL(new Blob([reportText(result)],{type:'text/plain;charset=utf-8'}));const a=el('a','');a.href=url;a.download='noticeguide-local-review.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});for(const r of REFERENCES){const li=el('li','');const a=el('a',r.title);a.href=r.url;a.rel='noreferrer';li.append(a);$('references').append(li);}$('reviewed').textContent=REVIEWED;

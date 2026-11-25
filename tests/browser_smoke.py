@@ -30,13 +30,19 @@ def main():
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(f"http://127.0.0.1:{server.server_port}/example-tool/")
                 page.locator("#sample").click()
-                assert page.locator("#output").input_value() == "Halifax\nLangley\nVancouver"
-                assert "1 duplicate removed" in page.locator("#status").inner_text()
-                page.locator("#input").fill('<img src=x onerror="alert(1)">\n<img src=x onerror="alert(1)">')
-                assert page.locator("#output").input_value() == '<img src=x onerror="alert(1)">'
+                assert "Example Rights Company" in page.locator("#fields").inner_text()
+                assert "Possible payment demand" in page.locator("#flags").inner_text()
+                requests=[]
+                page.on("request", lambda request: requests.append(request.url))
+                page.locator("#input").fill('<img src=x onerror="alert(1)">\nClaimant: Private Test')
+                page.locator("#analyse").click()
+                assert "Private Test" in page.locator("#fields").inner_text()
                 assert page.locator("img").count() == 0
+                assert page.evaluate("Object.keys(localStorage).length") == 0
+                assert requests == [], requests
                 page.locator("#clear").click()
-                assert page.locator("#output").input_value() == ""
+                assert page.locator("#input").input_value() == ""
+                assert page.locator("#results").is_hidden()
                 page.locator("#sample").click()
                 page.screenshot(path=str(screenshots / "desktop.png"), full_page=True)
                 page.set_viewport_size({"width": 390, "height": 844})

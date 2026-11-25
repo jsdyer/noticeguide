@@ -66,7 +66,7 @@ def build(root=ROOT):
             and tool["source"].rstrip("/") == f"https://github.com/jsdyer/{slug}"
         )
         reporting = {
-            "{{VISIT_COUNTER}}": '<script defer src="/assets/tool-metrics.js" referrerpolicy="no-referrer"></script>',
+            "{{VISIT_COUNTER}}": '',
             "{{ISSUE_LINK}}": f'<a href="https://coolcode.ca/report/?tool={slug}" referrerpolicy="no-referrer">Report an issue</a>',
         }
         for placeholder, markup in reporting.items():

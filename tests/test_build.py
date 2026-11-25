@@ -44,7 +44,7 @@ class BuildTests(unittest.TestCase):
                 self.edit(id=slug, url=f"/{slug}/", source=f"https://github.com/{owner}/{slug}")
                 build(self.root)
                 page = (self.root / "dist/index.html").read_text()
-                self.assertEqual('/assets/tool-metrics.js' in page, enabled)
+                self.assertNotIn('/assets/tool-metrics.js', page)
                 self.assertEqual(f'https://coolcode.ca/report/?tool={slug}' in page, enabled)
                 self.assertNotIn("{{", page)
 

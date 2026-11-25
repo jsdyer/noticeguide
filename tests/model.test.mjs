@@ -1,21 +1,9 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { cleanLines } from '../web/model.mjs';
-test('trims, removes blanks and preserves first-seen order', () => {
-  assert.deepEqual(cleanLines('  Halifax\nLangley\nHalifax\n\nVancouver  '), {
-    text: 'Halifax\nLangley\nVancouver', count: 3, removed: 1,
-  });
-});
-test('supports Windows and old Mac line endings', () => {
-  assert.equal(cleanLines('a\r\nb\ra').text, 'a\nb');
-});
-test('empty text and whitespace produce an empty result', () => {
-  assert.deepEqual(cleanLines(' \n\t'), { text: '', count: 0, removed: 0 });
-});
-test('preserves case and Unicode', () => {
-  assert.equal(cleanLines('Québec\nquébec\n東京\nQuébec').text, 'Québec\nquébec\n東京');
-});
-test('treats markup as ordinary text', () => {
-  assert.equal(cleanLines('<script>alert(1)</script>\n<script>alert(1)</script>').text, '<script>alert(1)</script>');
-});
-test('rejects non-text input', () => { assert.throws(() => cleanLines(null), TypeError); });
+import test from 'node:test';import assert from 'node:assert/strict';import {decodeNotice,EXAMPLE,MAX_INPUT,reportText} from '../web/model.mjs';
+test('extracts fictional notice with evidence and does not adjudicate',()=>{const r=decodeNotice(EXAMPLE);assert.equal(r.fields[0].values[0],'Example Rights Company');assert.deepEqual(r.ipv4,['192.0.2.24']);assert(r.flags.some(f=>f.kind.includes('payment')));assert(reportText(r).includes('not legal advice'));});
+test('does not call education or negated instruction a payment demand',()=>{assert.equal(decodeNotice('You do not need to pay a settlement. Notices must not contain a payment demand.').flags.length,0);});
+test('preserves date timezone and does not mistake forwarding date for event',()=>{const r=decodeNotice('Date: 2026-10-29\nInfringement date: 2026-10-20 13:02 UTC');assert.deepEqual(r.fields[5].values,['2026-10-20 13:02 UTC']);});
+test('unlabelled fields remain unknown, no invented claimant',()=>{const r=decodeNotice('Someone says a thing.');assert(r.fields.every(f=>!f.values.length));});
+test('court correspondence and personal information request are review flags',()=>{const r=decodeNotice('Please provide your name and address.\nStatement of claim served with court file 123');assert.equal(r.flags.length,2);});
+test('XML text remains text, malicious markup is not interpreted',()=>{assert.equal(decodeNotice('<Title>A film</Title>').fields[2].values[0],'A film');assert.equal(decodeNotice('<img src=x onerror=alert(1)>').flags.length,0);});
+test('rejects oversized input and invalid IP addresses',()=>{assert.throws(()=>decodeNotice('x'.repeat(MAX_INPUT+1)));assert.equal(decodeNotice('999.999.999.999').ipv4.length,0);});
+test('URLs are identified as text and settlement links are flagged',()=>{const r=decodeNotice('https://example.invalid/payment?id=1');assert.equal(r.urls.length,1);assert(r.flags.some(f=>f.kind.includes('hyperlink')));});
